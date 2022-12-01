@@ -1,0 +1,59 @@
+//아두이노
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(11, OUTPUT);
+}
+void loop() {
+  static unsigned  long Mil = 0;
+  if (millis() - Mil >= 500) {  
+    Mil = millis();             
+    int msg = analogRead(A2);
+    Serial.println(msg);
+  }
+  if (Serial.available() > 0) {
+    String m = Serial.readStringUntil('\n');
+    digitalWrite(11, HIGH);
+    delay(m);
+    digitalWrite(11, LOW);
+    delay(m);
+  }
+}
+
+//프로세싱
+
+import processing.net.*;
+import processing.serial.*;
+Server s;
+Client c;
+Serial p;
+void setup() {
+  s = new Server(this, 12345);
+  p = new Serial(this, "COM3", 9600);
+}
+String msg="hi";
+void draw() {
+  c = s.available();
+  if (c!=null) {
+    String m = c.readString();
+    if (m.indexOf("GET /")==0) {
+      c.write("HTTP/1.1 200 OK\r\n\r\n");
+      c.write(msg);
+    }
+    if (m.indexOf("PUT /")==0) {
+      int n = m.indexOf("\r\n\r\n")+4;
+      m = m.substring(n);
+      m += '\n';
+      p.write(m);
+      print(m);
+      c.write("HTTP/1.1 200 OK\r\n\r\n");
+      c.write(m);
+    }
+    c.stop();
+  }
+  if (p.available()>0) {
+    String m = p.readStringUntil('\n');
+    if (m!=null)  msg = m;
+    print(msg);    // 
+  }
+}
